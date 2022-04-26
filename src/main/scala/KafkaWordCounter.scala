@@ -19,7 +19,7 @@ object KafkaWordCounter extends App {
     }
   }
 
-  records.to("output1")
+  countWords.to("output1")
 
   val topology = streamBuilder.build()
 
