@@ -7,6 +7,7 @@ lazy val root = (project in file("."))
     name := "kafka-word-counter"
   )
 
+libraryDependencies += "org.apache.kafka" % "kafka-streams" % "3.1.0"
 libraryDependencies += "org.apache.kafka" %% "kafka-streams-scala" % "3.1.0"
 
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.36"
