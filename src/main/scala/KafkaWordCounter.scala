@@ -1,30 +1,42 @@
-import org.apache.kafka.streams.{KafkaStreams, StreamsBuilder}
-import org.apache.kafka.streams.kstream.Printed
-
-import java.util.Properties
-
 object KafkaWordCounter extends App {
 
-  val props = new Properties()
+  import org.apache.kafka.streams.scala.StreamsBuilder
+  import org.apache.kafka.streams.scala.ImplicitConversions._
+  import org.apache.kafka.streams.scala.serialization.Serdes._
 
-  import org.apache.kafka.common.serialization.Serdes
+  val streamBuilder = new StreamsBuilder
+
+  val records = streamBuilder.stream[String, String]("input1")
+
+  val countWords = records.foreach {
+    _.split("\\W+")
+    .groupBy(identity)
+    .view
+    .mapValues(_.length)
+    .foreach { case r@(word, occ) =>
+      println(r)
+      println(word, occ)
+    }
+  }
+
+  records.to("output1")
+
+  val topology = streamBuilder.build()
+
   import org.apache.kafka.streams.StreamsConfig
+  import scala.jdk.CollectionConverters._
 
-  props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String.getClass)
-  props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String.getClass)
-  props.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-pipe")
-  props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, ":9092")
+  import scala.concurrent.duration._
 
-  val builder = new StreamsBuilder
+  val props = Map(
+    StreamsConfig.APPLICATION_ID_CONFIG -> "kafka-streams-demo",
+    StreamsConfig.BOOTSTRAP_SERVERS_CONFIG -> ":9092",
+    StreamsConfig.POLL_MS_CONFIG -> 15.seconds.toMillis).asJava
+  val config = new StreamsConfig(props)
 
-  val source = builder.stream[String, String]("input-topic")
+  import org.apache.kafka.streams.KafkaStreams
 
-  source.to("output-topic")
-  source.print(Printed.toSysOut[String, String].withLabel("DEMO"))
+  val streams = new KafkaStreams(topology, config)
 
-  val topology = builder.build()
-  println(topology.describe())
-
-  val kafkaStreams = new KafkaStreams(topology, props)
-  kafkaStreams.start()
+  streams.start()
 }
