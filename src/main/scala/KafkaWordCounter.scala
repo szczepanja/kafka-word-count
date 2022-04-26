@@ -1,4 +1,4 @@
-import org.apache.kafka.streams.StreamsBuilder
+import org.apache.kafka.streams.{KafkaStreams, StreamsBuilder}
 import org.apache.kafka.streams.kstream.Printed
 
 import java.util.Properties
@@ -24,4 +24,7 @@ object KafkaWordCounter extends App {
 
   val topology = builder.build()
   println(topology.describe())
+
+  val kafkaStreams = new KafkaStreams(topology, props)
+  kafkaStreams.start()
 }
